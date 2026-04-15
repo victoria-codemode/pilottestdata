@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dating App Study — Analysis Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --navy: #0F1F3D;
+    --blue: #1A3A6B;
+    --mid-blue: #2B5BA8;
+    --light-blue: #D6E4F7;
+    --accent: #0066CC;
+    --teal: #006B6B;
+    --gray-100: #F4F5F7;
+    --gray-200: #E8EAED;
+    --gray-300: #CDD0D5;
+    --gray-500: #6B7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --white: #FFFFFF;
+    --success: #0D6B35;
+    --success-bg: #E6F4ED;
+    --warning: #7B4A00;
+    --warning-bg: #FEF3CD;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-900);
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  /* ─── Header ─── */
+  .header {
+    background: var(--navy);
+    color: white;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .header-title {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .header-meta {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .header-pills {
+    display: flex;
+    gap: 8px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+  }
+  .header-pill {
+    background: rgba(255,255,255,0.1);
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ─── Tab Nav ─── */
+  .tab-nav {
+    display: flex;
+    padding: 0 24px;
+    background: var(--navy);
+    gap: 0;
+  }
+  .tab-btn {
+    font-size: 12px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 400;
+    color: rgba(255,255,255,0.55);
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: rgba(255,255,255,0.85); }
+  .tab-btn.active {
+    color: white;
+    border-bottom-color: #4A9EFF;
+    font-weight: 500;
+  }
+
+  /* ─── Layout ─── */
+  .content {
+    padding: 20px 24px;
+    max-width: 1100px;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+
+  /* ─── SPSS Output Block ─── */
+  .output-block {
+    background: white;
+    border: 1px solid var(--gray-300);
+    margin-bottom: 16px;
+  }
+  .output-title {
+    background: var(--navy);
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 6px 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .output-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-700);
+    padding: 10px 12px 6px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  /* ─── SPSS Table ─── */
+  .spss-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .spss-table thead tr {
+    background: var(--blue);
+    color: white;
+  }
+  .spss-table thead th {
+    padding: 6px 10px;
+    text-align: right;
+    font-weight: 500;
+    font-size: 11px;
+    border-right: 1px solid rgba(255,255,255,0.15);
+    white-space: nowrap;
+  }
+  .spss-table thead th:first-child { text-align: left; border-right: 2px solid rgba(255,255,255,0.2); }
+  .spss-table tbody tr:nth-child(even) { background: #F8FAFC; }
+  .spss-table tbody tr:hover { background: var(--light-blue); }
+  .spss-table tbody td {
+    padding: 5px 10px;
+    text-align: right;
+    border-right: 1px solid var(--gray-200);
+    border-bottom: 1px solid var(--gray-200);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--gray-700);
+  }
+  .spss-table tbody td:first-child {
+    text-align: left;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    color: var(--gray-900);
+    border-right: 2px solid var(--gray-300);
+  }
+  .spss-table tfoot td {
+    padding: 5px 10px;
+    text-align: right;
+    border-top: 2px solid var(--blue);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    background: var(--gray-100);
+  }
+  .spss-table tfoot td:first-child {
+    text-align: left;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    border-right: 2px solid var(--gray-300);
+  }
+
+  /* ─── Bar in table ─── */
+  .bar-cell { display: flex; align-items: center; gap: 6px; }
+  .bar-track { flex: 1; height: 8px; background: var(--gray-200); border-radius: 1px; min-width: 60px; }
+  .bar-fill { height: 100%; background: var(--mid-blue); border-radius: 1px; transition: width 0.3s; }
+  .bar-fill.teal { background: var(--teal); }
+  .bar-fill.accent { background: #E8460A; }
+
+  /* ─── Code badge ─── */
+  .code-badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 1px 5px;
+    border-radius: 2px;
+    background: var(--light-blue);
+    color: var(--blue);
+    margin-right: 4px;
+  }
+
+  /* ─── Summary stat ─── */
+  .stat-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .stat-card {
+    background: white;
+    border: 1px solid var(--gray-300);
+    padding: 12px 16px;
+    flex: 1;
+    min-width: 110px;
+  }
+  .stat-label { font-size: 10px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .stat-value { font-size: 26px; font-weight: 300; color: var(--navy); font-family: 'IBM Plex Mono', monospace; line-height: 1; }
+  .stat-sub { font-size: 10px; color: var(--gray-500); margin-top: 3px; }
+
+  /* ─── Cross-tab ─── */
+  .finding-card {
+    background: white;
+    border: 1px solid var(--gray-300);
+    margin-bottom: 16px;
+  }
+  .finding-header {
+    background: var(--teal);
+    color: white;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .finding-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    background: rgba(255,255,255,0.2);
+    padding: 1px 6px;
+    border-radius: 2px;
+  }
+  .finding-title { font-size: 12px; font-weight: 500; }
+  .finding-body { padding: 12px; }
+  .finding-q { font-size: 11px; color: var(--gray-500); margin-bottom: 10px; font-style: italic; }
+  .finding-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .finding-stat {
+    text-align: center;
+    padding: 8px 12px;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    min-width: 80px;
+  }
+  .finding-stat .n { font-size: 22px; font-weight: 300; color: var(--teal); font-family: 'IBM Plex Mono', monospace; }
+  .finding-stat .lbl { font-size: 10px; color: var(--gray-500); margin-top: 2px; }
+  .finding-note { font-size: 11px; color: var(--gray-700); line-height: 1.6; padding: 8px; background: var(--warning-bg); border-left: 3px solid #D4860A; }
+  .finding-note.positive { background: var(--success-bg); border-color: var(--success); color: var(--success); }
+
+  /* ─── Section header ─── */
+  .section-hdr {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 20px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--gray-300);
+  }
+  .section-hdr:first-child { margin-top: 0; }
+
+  /* ─── Crosstab table ─── */
+  .xtab { border-collapse: collapse; width: 100%; font-size: 11px; }
+  .xtab th, .xtab td { border: 1px solid var(--gray-300); padding: 5px 10px; text-align: center; }
+  .xtab th { background: var(--blue); color: white; font-weight: 500; }
+  .xtab td:first-child { text-align: left; background: var(--gray-100); font-weight: 500; }
+  .xtab td { font-family: 'IBM Plex Mono', monospace; }
+  .xtab tfoot td { background: var(--gray-200); font-weight: 600; border-top: 2px solid var(--navy); }
+
+  .subsection { font-size: 11px; font-weight: 600; color: var(--gray-700); margin: 12px 0 6px; }
+
+  .note-block {
+    font-size: 11px;
+    color: var(--gray-500);
+    padding: 6px 10px;
+    background: var(--gray-100);
+    border-left: 2px solid var(--gray-300);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+  .note-block strong { color: var(--gray-700); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-title">Dating App Behavior Study — Pilot Analysis</div>
+      <div class="header-meta">Data pulled 2026-04-14 &nbsp;·&nbsp; Qualitative + Quantitative Dashboard</div>
+    </div>
+    <div class="header-pills">
+      <span class="header-pill">N = 46</span>
+      <span class="header-pill">4 OE Questions</span>
+      <span class="header-pill">Pilot</span>
+    </div>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="showTab('sample',this)">Sample</button>
+    <button class="tab-btn" onclick="showTab('measures',this)">Behavioral Measures</button>
+    <button class="tab-btn" onclick="showTab('q5',this)">Q5 — Social Use</button>
+    <button class="tab-btn" onclick="showTab('q7',this)">Q7 — Research</button>
+    <button class="tab-btn" onclick="showTab('q9',this)">Q9 — Alt Platforms</button>
+    <button class="tab-btn" onclick="showTab('q11',this)">Q11 — Non-Romantic</button>
+    <button class="tab-btn" onclick="showTab('findings',this)">Key Findings</button>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ═══ SAMPLE ═══ -->
+<div id="sample" class="panel active">
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-label">Total N</div><div class="stat-value">46</div><div class="stat-sub">Pilot respondents</div></div>
+    <div class="stat-card"><div class="stat-label">% Female</div><div class="stat-value">63%</div><div class="stat-sub">29 of 46</div></div>
+    <div class="stat-card"><div class="stat-label">Age Mode</div><div class="stat-value">18–35</div><div class="stat-sub">95.7% of sample</div></div>
+    <div class="stat-card"><div class="stat-label">% Hispanic</div><div class="stat-value">13%</div><div class="stat-sub">6 of 45 valid</div></div>
+    <div class="stat-card"><div class="stat-label">Top App</div><div class="stat-value">Hinge</div><div class="stat-sub">82.6% used</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="output-block">
+        <div class="output-title">Frequencies — Age (Q15)</div>
+        <div class="output-label">How old are you?</div>
+        <table class="spss-table">
+          <thead><tr><th>Category</th><th>Freq</th><th>%</th><th>Valid %</th><th>Cum %</th></tr></thead>
+          <tbody>
+            <tr><td>18 to 35</td><td>44</td><td>95.7</td><td>95.7</td><td>95.7</td></tr>
+            <tr><td>36 to 49</td><td>1</td><td>2.2</td><td>2.2</td><td>97.9</td></tr>
+            <tr><td>49+</td><td>1</td><td>2.2</td><td>2.2</td><td>100.0</td></tr>
+          </tbody>
+          <tfoot><tr><td>Total</td><td>46</td><td>100.0</td><td>100.0</td><td></td></tr></tfoot>
+        </table>
+      </div>
+
+      <div class="output-block">
+        <div class="output-title">Frequencies — Gender (Q16)</div>
+        <div class="output-label">How do you describe yourself?</div>
+        <table class="spss-table">
+          <thead><tr><th>Category</th><th>Freq</th><th>%</th><th>Valid %</th><th>Bar</th></tr></thead>
+          <tbody>
+            <tr><td>Female</td><td>29</td><td>63.0</td><td>64.4</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:64%"></div></div></div></td></tr>
+            <tr><td>Male</td><td>10</td><td>21.7</td><td>22.2</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:22%"></div></div></div></td></tr>
+            <tr><td>Non-binary / third gender</td><td>3</td><td>6.5</td><td>6.7</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:7%"></div></div></div></td></tr>
+            <tr><td>Prefer to self-describe</td><td>2</td><td>4.3</td><td>4.4</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:4%"></div></div></div></td></tr>
+            <tr><td>Prefer not to say</td><td>1</td><td>2.2</td><td>2.2</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:2%"></div></div></div></td></tr>
+            <tr><td style="color:var(--gray-500);font-style:italic">Missing / system</td><td>1</td><td>2.2</td><td>—</td><td></td></tr>
+          </tbody>
+          <tfoot><tr><td>Total</td><td>46</td><td>100.0</td><td>100.0 (n=45)</td><td></td></tr></tfoot>
+        </table>
+      </div>
+
+      <div class="output-block">
+        <div class="output-title">Frequencies — Hispanic Origin (Q12)</div>
+        <div class="output-label">Are you of Spanish, Hispanic, or Latino origin?</div>
+        <table class="spss-table">
+          <thead><tr><th>Category</th><th>Freq</th><th>%</th><th>Valid %</th><th>Cum %</th></tr></thead>
+          <tbody>
+            <tr><td>No</td><td>39</td><td>84.8</td><td>86.7</td><td>86.7</td></tr>
+            <tr><td>Yes</td><td>6</td><td>13.0</td><td>13.3</td><td>100.0</td></tr>
+            <tr><td style="color:var(--gray-500);font-style:italic">Missing / system</td><td>1</td><td>2.2</td><td>—</td><td></td></tr>
+          </tbody>
+          <tfoot><tr><td>Total</td><td>46</td><td>100.0</td><td>100.0 (n=45)</td><td></td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="output-block">
+        <div class="output-title">Frequencies — Race (Q13)</div>
+        <div class="output-label">Choose one or more races (select all that apply, % of N=46)</div>
+        <table class="spss-table">
+          <thead><tr><th>Category</th><th>Freq</th><th>% of N</th><th>Bar</th></tr></thead>
+          <tbody>
+            <tr><td>White or Caucasian</td><td>33</td><td>71.7</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div></div></td></tr>
+            <tr><td>Asian</td><td>13</td><td>28.3</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:28%"></div></div></div></td></tr>
+            <tr><td>Native Hawaiian / Pacific Islander</td><td>5</td><td>10.9</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:11%"></div></div></div></td></tr>
+            <tr><td>Black or African American</td><td>4</td><td>8.7</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:9%"></div></div></div></td></tr>
+            <tr><td>American Indian / Alaska Native</td><td>2</td><td>4.3</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:4%"></div></div></div></td></tr>
+            <tr><td>Other</td><td>2</td><td>4.3</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:4%"></div></div></div></td></tr>
+            <tr><td style="color:var(--gray-500);font-style:italic">Prefer not to say / Missing</td><td>2</td><td>4.3</td><td></td></tr>
+          </tbody>
+          <tfoot><tr><td>Total responses</td><td>61</td><td colspan="2">Exceeds N (multi-select)</td></tr></tfoot>
+        </table>
+      </div>
+
+      <div class="output-block">
+        <div class="output-title">Frequencies — Apps Used (Q3)</div>
+        <div class="output-label">Which dating apps have you used? (select all that apply, % of N=46)</div>
+        <table class="spss-table">
+          <thead><tr><th>App</th><th>Freq</th><th>% of N</th><th>Bar</th></tr></thead>
+          <tbody>
+            <tr><td>Hinge</td><td>38</td><td>82.6</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:83%"></div></div></div></td></tr>
+            <tr><td>Tinder</td><td>26</td><td>56.5</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:57%"></div></div></div></td></tr>
+            <tr><td>Bumble</td><td>16</td><td>34.8</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:35%"></div></div></div></td></tr>
+            <tr><td>Other (various)</td><td>8</td><td>17.4</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:17%"></div></div></div></td></tr>
+            <tr><td>Grindr</td><td>3</td><td>6.5</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:7%"></div></div></div></td></tr>
+            <tr><td>HER</td><td>3</td><td>6.5</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:7%"></div></div></div></td></tr>
+            <tr><td>Raya</td><td>2</td><td>4.3</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:4%"></div></div></div></td></tr>
+          </tbody>
+        </table>
+        <div class="note-block">Other apps include Feeld, Fet, OkCupid, Yubo, Lex, Taimi, eharmony</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BEHAVIORAL MEASURES ═══ -->
+<div id="measures" class="panel">
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-label">Social use (Q4)</div><div class="stat-value">82.6%</div><div class="stat-sub">38 of 46</div></div>
+    <div class="stat-card"><div class="stat-label">Left to research (Q6)</div><div class="stat-value">65.2%</div><div class="stat-sub">30 of 46</div></div>
+    <div class="stat-card"><div class="stat-label">Used alt platform (Q8)</div><div class="stat-value">41.3%</div><div class="stat-sub">19 of 46</div></div>
+    <div class="stat-card"><div class="stat-label">Non-romantic use (Q10)</div><div class="stat-value">39.1%</div><div class="stat-sub">18 of 46</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="output-block">
+      <div class="output-title">Frequencies — Q4 Social Use</div>
+      <div class="output-label">Have you ever used a dating app in a social setting?</div>
+      <table class="spss-table">
+        <thead><tr><th>Response</th><th>Freq</th><th>%</th><th>Valid %</th><th>Cum %</th></tr></thead>
+        <tbody>
+          <tr><td>Yes</td><td>38</td><td>82.6</td><td>82.6</td><td>82.6</td></tr>
+          <tr><td>No</td><td>8</td><td>17.4</td><td>17.4</td><td>100.0</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td>46</td><td>100.0</td><td>100.0</td><td></td></tr></tfoot>
+      </table>
+    </div>
+
+    <div class="output-block">
+      <div class="output-title">Frequencies — Q6 Off-App Research</div>
+      <div class="output-label">Have you ever left the app to look someone up?</div>
+      <table class="spss-table">
+        <thead><tr><th>Response</th><th>Freq</th><th>%</th><th>Valid %</th><th>Cum %</th></tr></thead>
+        <tbody>
+          <tr><td>Yes</td><td>30</td><td>65.2</td><td>65.2</td><td>65.2</td></tr>
+          <tr><td>No</td><td>16</td><td>34.8</td><td>34.8</td><td>100.0</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td>46</td><td>100.0</td><td>100.0</td><td></td></tr></tfoot>
+      </table>
+    </div>
+
+    <div class="output-block">
+      <div class="output-title">Frequencies — Q8 Alt Platform Use</div>
+      <div class="output-label">Have you used a non-dating app in a dating-app-like way?</div>
+      <table class="spss-table">
+        <thead><tr><th>Response</th><th>Freq</th><th>%</th><th>Valid %</th><th>Cum %</th></tr></thead>
+        <tbody>
+          <tr><td>Yes</td><td>19</td><td>41.3</td><td>41.3</td><td>41.3</td></tr>
+          <tr><td>No</td><td>27</td><td>58.7</td><td>58.7</td><td>100.0</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td>46</td><td>100.0</td><td>100.0</td><td></td></tr></tfoot>
+      </table>
+    </div>
+
+    <div class="output-block">
+      <div class="output-title">Frequencies — Q10 Non-Romantic Use</div>
+      <div class="output-label">Have you ever used a dating app for something other than romance?</div>
+      <table class="spss-table">
+        <thead><tr><th>Response</th><th>Freq</th><th>%</th><th>Valid %</th><th>Cum %</th></tr></thead>
+        <tbody>
+          <tr><td>Yes</td><td>18</td><td>39.1</td><td>39.1</td><td>39.1</td></tr>
+          <tr><td>No</td><td>28</td><td>60.9</td><td>60.9</td><td>100.0</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td>46</td><td>100.0</td><td>100.0</td><td></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="output-block">
+    <div class="output-title">Crosstab — Behavioral Measure Co-Occurrence (% of total N=46)</div>
+    <div class="output-label">How many behaviors did respondents endorse?</div>
+    <table class="spss-table">
+      <thead><tr><th>Measure</th><th>0 other yes</th><th>1 other yes</th><th>2 other yes</th><th>3 other yes</th></tr></thead>
+      <tbody>
+        <tr><td>Q4 Social use</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>Q4 + Q6 (social & research)</td><td colspan="4" style="text-align:center; font-style:italic">26 respondents (56.5%) said Yes to both</td></tr>
+        <tr><td>Q4 + Q6 + Q8 (all three)</td><td colspan="4" style="text-align:center; font-style:italic">12 respondents (26.1%) said Yes to all three</td></tr>
+        <tr><td>All four (Q4+Q6+Q8+Q10)</td><td colspan="4" style="text-align:center; font-style:italic">7 respondents (15.2%) said Yes to all four</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ Q5 ═══ -->
+<div id="q5" class="panel">
+  <div class="note-block" style="margin-bottom:16px"><strong>Base:</strong> Q4=Yes respondents (n=38). Codes are not mutually exclusive — respondents may receive multiple codes. Some early respondents have blank codes in the OE file.</div>
+
+  <div class="output-block">
+    <div class="output-title">Frequencies — Q5 Social Use Codes (among Q4=Yes, n=38)</div>
+    <div class="output-label">You mentioned you've used dating apps in a social setting. Please describe the situation(s).</div>
+    <table class="spss-table">
+      <thead><tr><th>Code</th><th>Label</th><th>Freq</th><th>% of base</th><th>Bar</th></tr></thead>
+      <tbody>
+        <tr><td><span class="code-badge">PS</span></td><td>Profile/match sharing</td><td>18</td><td>47.4</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:47%"></div></div></div></td></tr>
+        <tr><td><span class="code-badge">CB</span></td><td>Co-browsing</td><td>16</td><td>42.1</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:42%"></div></div></div></td></tr>
+        <tr><td><span class="code-badge">IS</span></td><td>Input seeking</td><td>8</td><td>21.1</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:21%"></div></div></div></td></tr>
+        <tr><td><span class="code-badge">CS</span></td><td>Collective/proxy swiping</td><td>7</td><td>18.4</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:18%"></div></div></div></td></tr>
+        <tr><td><span class="code-badge">RM</span></td><td>Remote modality (FaceTime/screen share)</td><td>6</td><td>15.8</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:16%"></div></div></div></td></tr>
+        <tr><td><span class="code-badge">EF</span></td><td>Entertainment framing</td><td>6</td><td>15.8</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:16%"></div></div></div></td></tr>
+        <tr><td><span class="code-badge">PC</span></td><td>Profile collaboration</td><td>3</td><td>7.9</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:8%"></div></div></div></td></tr>
+      </tbody>
+      <tfoot><tr><td colspan="2">Base (Q4=Yes)</td><td>38</td><td>—</td><td></td></tr></tfoot>
+    </table>
+  </div>
+
+  <div class="grid-2">
+    <div class="output-block">
+      <div class="output-title">Code Co-Occurrence — Activity Type</div>
+      <div class="output-label">CB + PS (co-browse and share)</div>
+      <table class="spss-table">
+        <thead><tr><th>Combination</th><th>Freq</th><th>% of base</th></tr></thead>
+        <tbody>
+          <tr><td>CB only</td><td>8</td><td>21.1</td></tr>
+          <tr><td>PS only</td><td>10</td><td>26.3</td></tr>
+          <tr><td>CB + PS</td><td>8</td><td>21.1</td></tr>
+          <tr><td>Neither</td><td>12</td><td>31.6</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td>38</td><td>100.0</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="output-block">
+      <div class="output-title">Code Co-Occurrence — Purpose</div>
+      <div class="output-label">EF (entertainment) vs IS (input seeking)</div>
+      <table class="spss-table">
+        <thead><tr><th>Combination</th><th>Freq</th><th>% of base</th></tr></thead>
+        <tbody>
+          <tr><td>IS only (genuine input)</td><td>6</td><td>15.8</td></tr>
+          <tr><td>EF only (entertainment)</td><td>4</td><td>10.5</td></tr>
+          <tr><td>Both EF + IS</td><td>2</td><td>5.3</td></tr>
+          <tr><td>Neither coded</td><td>26</td><td>68.4</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td>38</td><td>100.0</td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Q7 ═══ -->
+<div id="q7" class="panel">
+  <div class="note-block" style="margin-bottom:16px"><strong>Base:</strong> Q6=Yes respondents (n=30). Platform and motivation codes are not mutually exclusive.</div>
+
+  <div class="grid-2">
+    <div class="output-block">
+      <div class="output-title">Frequencies — Q7 Platform Codes (n=30)</div>
+      <div class="output-label">Where did respondents go? (select all that apply)</div>
+      <table class="spss-table">
+        <thead><tr><th>Code</th><th>Platform</th><th>Freq</th><th>% of base</th><th>Bar</th></tr></thead>
+        <tbody>
+          <tr><td><span class="code-badge">IG</span></td><td>Instagram</td><td>19</td><td>63.3</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:63%"></div></div></div></td></tr>
+          <tr><td><span class="code-badge">LI</span></td><td>LinkedIn</td><td>6</td><td>20.0</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:20%"></div></div></div></td></tr>
+          <tr><td><span class="code-badge">GL</span></td><td>Google</td><td>4</td><td>13.3</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:13%"></div></div></div></td></tr>
+          <tr><td><span class="code-badge">OT</span></td><td>Other platform</td><td>1</td><td>3.3</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:3%"></div></div></div></td></tr>
+        </tbody>
+        <tfoot><tr><td colspan="2">Base (Q6=Yes)</td><td>30</td><td>—</td><td></td></tr></tfoot>
+      </table>
+    </div>
+
+    <div class="output-block">
+      <div class="output-title">Frequencies — Q7 Motivation Codes (n=30)</div>
+      <div class="output-label">Why did they go? (select all that apply)</div>
+      <table class="spss-table">
+        <thead><tr><th>Code</th><th>Motivation</th><th>Freq</th><th>% of base</th><th>Bar</th></tr></thead>
+        <tbody>
+          <tr><td><span class="code-badge">SV</span></td><td>Safety &amp; verification</td><td>7</td><td>23.3</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:23%"></div></div></div></td></tr>
+          <tr><td><span class="code-badge">MC</span></td><td>Mutual connection check</td><td>7</td><td>23.3</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:23%"></div></div></div></td></tr>
+          <tr><td><span class="code-badge">BV</span></td><td>Background/character vetting</td><td>6</td><td>20.0</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:20%"></div></div></div></td></tr>
+          <tr><td><span class="code-badge">AC</span></td><td>Attraction/more content</td><td>4</td><td>13.3</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:13%"></div></div></div></td></tr>
+        </tbody>
+        <tfoot><tr><td colspan="2">Base (Q6=Yes)</td><td>30</td><td>—</td><td></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="output-block">
+    <div class="output-title">Crosstab — Q7 Motivation by Gender</div>
+    <div class="output-label">SV (safety & verification) — Who is vetting for safety? (n=30 Q6=Yes)</div>
+    <table class="xtab">
+      <thead><tr><th>SV Code</th><th>Female</th><th>Male</th><th>Non-binary</th><th>Other/Missing</th><th>Total</th></tr></thead>
+      <tbody>
+        <tr><td>SV = coded</td><td>4</td><td>3</td><td>0</td><td>0</td><td>7</td></tr>
+        <tr><td>SV = not coded</td><td>16</td><td>5</td><td>2</td><td>0</td><td>23</td></tr>
+      </tbody>
+      <tfoot><tr><td>Total Q6=Yes</td><td>20</td><td>8</td><td>2</td><td>0</td><td>30</td></tr></tfoot>
+    </table>
+    <div class="note-block">Female SV rate: 20.0% (4/20) · Male SV rate: 37.5% (3/8) · <strong>Note:</strong> small N limits interpretation; pilot finding only.</div>
+  </div>
+</div>
+
+<!-- ═══ Q9 ═══ -->
+<div id="q9" class="panel">
+  <div class="note-block" style="margin-bottom:16px"><strong>Base:</strong> Q8=Yes respondents (n=19). Platform and behavior codes are not mutually exclusive.</div>
+
+  <div class="grid-2">
+    <div class="output-block">
+      <div class="output-title">Frequencies — Q9 Platform Codes (n=19)</div>
+      <div class="output-label">Which non-dating platform? (select all that apply)</div>
+      <table class="spss-table">
+        <thead><tr><th>Code</th><th>Platform</th><th>Freq</th><th>% of base</th><th>Bar</th></tr></thead>
+        <tbody>
+          <tr><td><span class="code-badge">IG</span></td><td>Instagram</td><td>10</td><td>52.6</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:53%"></div></div></div></td></tr>
+          <tr><td><span class="code-badge">OT</span></td><td>Other (TikTok, Uber, Letterboxd, etc.)</td><td>4</td><td>21.1</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:21%"></div></div></div></td></tr>
+          <tr><td><span class="code-badge">SN</span></td><td>Snapchat</td><td>2</td><td>10.5</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:11%"></div></div></div></td></tr>
+          <tr><td><span class="code-badge">DC</span></td><td>Discord</td><td>1</td><td>5.3</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:5%"></div></div></div></td></tr>
+        </tbody>
+        <tfoot><tr><td colspan="2">Base (Q8=Yes)</td><td>19</td><td>—</td><td></td></tr></tfoot>
+      </table>
+    </div>
+
+    <div class="output-block">
+      <div class="output-title">Frequencies — Q9 Behavior Codes (n=19)</div>
+      <div class="output-label">How were they used? (select all that apply)</div>
+      <table class="spss-table">
+        <thead><tr><th>Code</th><th>Behavior</th><th>Freq</th><th>% of base</th><th>Bar</th></tr></thead>
+        <tbody>
+          <tr><td><span class="code-badge">DM</span></td><td>DM sliding</td><td>8</td><td>42.1</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:42%"></div></div></div></td></tr>
+          <tr><td><span class="code-badge">SCC</span></td><td>Shared context connection</td><td>4</td><td>21.1</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:21%"></div></div></div></td></tr>
+          <tr><td><span class="code-badge">OM</span></td><td>Off-app migration</td><td>2</td><td>10.5</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:11%"></div></div></div></td></tr>
+        </tbody>
+        <tfoot><tr><td colspan="2">Base (Q8=Yes)</td><td>19</td><td>—</td><td></td></tr></tfoot>
+      </table>
+    </div>
+  </div>
+
+  <div class="output-block">
+    <div class="output-title">Crosstab — Q9 Platform × Behavior</div>
+    <div class="output-label">Which platforms are used for which behaviors?</div>
+    <table class="xtab">
+      <thead><tr><th>Platform</th><th>DM sliding</th><th>Shared context</th><th>Off-app migration</th><th>No behavior coded</th><th>Total</th></tr></thead>
+      <tbody>
+        <tr><td>Instagram (IG)</td><td>8</td><td>0</td><td>1</td><td>1</td><td>10</td></tr>
+        <tr><td>Other (OT)</td><td>0</td><td>2</td><td>0</td><td>2</td><td>4</td></tr>
+        <tr><td>Snapchat (SN)</td><td>1</td><td>0</td><td>0</td><td>1</td><td>2</td></tr>
+        <tr><td>Discord (DC)</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td></tr>
+      </tbody>
+    </table>
+    <div class="note-block">Instagram is used almost exclusively for DM sliding. Shared context connection clusters in the "Other" category (Letterboxd, Duolingo) and Discord.</div>
+  </div>
+</div>
+
+<!-- ═══ Q11 ═══ -->
+<div id="q11" class="panel">
+  <div class="note-block" style="margin-bottom:16px"><strong>Base:</strong> Q10=Yes respondents (n=18). Codes are not mutually exclusive.</div>
+
+  <div class="grid-2">
+    <div>
+      <div class="output-block">
+        <div class="output-title">Frequencies — Q11 Non-Romantic Use Codes (n=18)</div>
+        <div class="output-label">How did you use a dating app for something other than romance?</div>
+        <table class="spss-table">
+          <thead><tr><th>Code</th><th>Label</th><th>Freq</th><th>% of base</th><th>Bar</th></tr></thead>
+          <tbody>
+            <tr><td><span class="code-badge">FF</span></td><td>Friend-finding</td><td>10</td><td>55.6</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:56%"></div></div></div></td></tr>
+            <tr><td><span class="code-badge">SH</span></td><td>Sex/hookups &amp; sugar</td><td>5</td><td>27.8</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:28%"></div></div></div></td></tr>
+            <tr><td><span class="code-badge">CB</span></td><td>Community building</td><td>3</td><td>16.7</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:17%"></div></div></div></td></tr>
+            <tr><td><span class="code-badge">VD</span></td><td>Validation/distraction</td><td>2</td><td>11.1</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:11%"></div></div></div></td></tr>
+            <tr><td><span class="code-badge">NP</span></td><td>Networking/professional</td><td>1</td><td>5.6</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:6%"></div></div></div></td></tr>
+            <tr><td><span class="code-badge">ST</span></td><td>Situationship</td><td>1</td><td>5.6</td><td><div class="bar-cell"><div class="bar-track"><div class="bar-fill teal" style="width:6%"></div></div></div></td></tr>
+          </tbody>
+          <tfoot><tr><td colspan="2">Base (Q10=Yes)</td><td>18</td><td>—</td><td></td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="output-block">
+        <div class="output-title">Crosstab — Q11 by Gender</div>
+        <div class="output-label">Who endorses each non-romantic use type? (n=18)</div>
+        <table class="xtab">
+          <thead><tr><th>Code</th><th>Female</th><th>Male</th><th>NB/Other</th><th>Total</th></tr></thead>
+          <tbody>
+            <tr><td>FF</td><td>8</td><td>1</td><td>1</td><td>10</td></tr>
+            <tr><td>SH</td><td>2</td><td>1</td><td>2</td><td>5</td></tr>
+            <tr><td>CB</td><td>2</td><td>0</td><td>1</td><td>3</td></tr>
+            <tr><td>VD</td><td>2</td><td>0</td><td>0</td><td>2</td></tr>
+            <tr><td>NP</td><td>0</td><td>1</td><td>0</td><td>1</td></tr>
+            <tr><td>ST</td><td>1</td><td>0</td><td>0</td><td>1</td></tr>
+          </tbody>
+        </table>
+        <div class="note-block" style="margin-top:8px">Friend-finding is predominantly female. SH is more distributed across gender groups. NP (networking) is male-only in this sample.</div>
+      </div>
+
+      <div class="output-block">
+        <div class="output-title">Total Non-Romantic Use</div>
+        <div class="output-label">% of full sample endorsing any Q11 code</div>
+        <table class="spss-table">
+          <thead><tr><th>Category</th><th>Freq</th><th>% of N=46</th></tr></thead>
+          <tbody>
+            <tr><td>Any non-romantic use</td><td>18</td><td>39.1</td></tr>
+            <tr><td>No non-romantic use / No</td><td>28</td><td>60.9</td></tr>
+          </tbody>
+          <tfoot><tr><td>Total</td><td>46</td><td>100.0</td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ KEY FINDINGS ═══ -->
+<div id="findings" class="panel">
+  <div class="note-block" style="margin-bottom:16px"><strong>Pilot note:</strong> All cross-tabulations are based on N=46. Cell sizes are small — interpret as directional patterns for hypothesis generation only, not confirmatory analysis.</div>
+
+  <!-- Finding 1 -->
+  <div class="finding-card">
+    <div class="finding-header">
+      <span class="finding-num">F1</span>
+      <span class="finding-title">Instagram as dual infrastructure — research tool AND dating platform</span>
+    </div>
+    <div class="finding-body">
+      <div class="finding-q">Among respondents who both researched via Q7 and used alternative platforms via Q9: how many used Instagram for both?</div>
+      <div class="finding-stats">
+        <div class="finding-stat"><div class="n">12</div><div class="lbl">Q6=Yes & Q8=Yes</div></div>
+        <div class="finding-stat"><div class="n">4</div><div class="lbl">IG in both Q7 & Q9</div></div>
+        <div class="finding-stat"><div class="n">33%</div><div class="lbl">of the 12 joint users</div></div>
+        <div class="finding-stat"><div class="n">63%</div><div class="lbl">Q7 IG rate (of n=30)</div></div>
+        <div class="finding-stat"><div class="n">53%</div><div class="lbl">Q9 IG rate (of n=19)</div></div>
+      </div>
+      <div class="finding-note positive">1 in 3 respondents who both researched and used alternative platforms relied on Instagram for both functions — suggesting it operates simultaneously as a vetting tool and a dating platform in its own right.</div>
+    </div>
+  </div>
+
+  <!-- Finding 2 -->
+  <div class="finding-card">
+    <div class="finding-header">
+      <span class="finding-num">F2</span>
+      <span class="finding-title">Social vetting pipeline — input seekers are also off-app researchers</span>
+    </div>
+    <div class="finding-body">
+      <div class="finding-q">Among Q5 input seekers (IS), how many also verified safety (SV) or checked mutual connections (MC) in Q7?</div>
+      <div class="finding-stats">
+        <div class="finding-stat"><div class="n">8</div><div class="lbl">IS coded (Q5)</div></div>
+        <div class="finding-stat"><div class="n">4</div><div class="lbl">IS + (SV or MC)</div></div>
+        <div class="finding-stat"><div class="n">50%</div><div class="lbl">of IS respondents</div></div>
+        <div class="finding-stat"><div class="n">3</div><div class="lbl">IS + SV</div></div>
+        <div class="finding-stat"><div class="n">2</div><div class="lbl">IS + MC</div></div>
+      </div>
+      <div class="finding-note">Half of respondents who explicitly sought friends' input while swiping (IS) also went off-app to verify the person. This suggests a connected social trust infrastructure around dating decisions — crowdsourced judgment followed by independent verification.</div>
+    </div>
+  </div>
+
+  <!-- Finding 3 -->
+  <div class="finding-card">
+    <div class="finding-header">
+      <span class="finding-num">F3</span>
+      <span class="finding-title">Safety & verification — not gender-skewed in this sample</span>
+    </div>
+    <div class="finding-body">
+      <div class="finding-q">How does SV (safety & verification) in Q7 break down by gender?</div>
+      <div class="finding-stats">
+        <div class="finding-stat"><div class="n">7</div><div class="lbl">Total SV coded</div></div>
+        <div class="finding-stat"><div class="n">4</div><div class="lbl">Female SV</div></div>
+        <div class="finding-stat"><div class="n">20%</div><div class="lbl">of Q6=Yes females (n=20)</div></div>
+        <div class="finding-stat"><div class="n">3</div><div class="lbl">Male SV</div></div>
+        <div class="finding-stat"><div class="n">38%</div><div class="lbl">of Q6=Yes males (n=8)</div></div>
+      </div>
+      <table class="xtab" style="margin-bottom:8px">
+        <thead><tr><th>Gender</th><th>SV coded</th><th>SV not coded</th><th>Total (Q6=Yes)</th><th>SV rate</th></tr></thead>
+        <tbody>
+          <tr><td>Female</td><td>4</td><td>16</td><td>20</td><td>20.0%</td></tr>
+          <tr><td>Male</td><td>3</td><td>5</td><td>8</td><td>37.5%</td></tr>
+          <tr><td>Non-binary/other</td><td>0</td><td>2</td><td>2</td><td>0.0%</td></tr>
+        </tbody>
+        <tfoot><tr><td>Total</td><td>7</td><td>23</td><td>30</td><td>23.3%</td></tr></tfoot>
+      </table>
+      <div class="finding-note"><strong>Unexpected pattern:</strong> Male SV rate (37.5%) exceeds female (20%) in this sample. Likely a pilot artifact given small N — worth monitoring in a larger study. Qualitative language (pre-meetup fear, catfish concern) skewed female.</div>
+    </div>
+  </div>
+
+  <!-- Finding 4 -->
+  <div class="finding-card">
+    <div class="finding-header">
+      <span class="finding-num">F4</span>
+      <span class="finding-title">Social swiping purpose — entertainment vs. genuine input</span>
+    </div>
+    <div class="finding-body">
+      <div class="finding-q">Among Q4=Yes respondents (n=38), how does purpose break down?</div>
+      <div class="finding-stats">
+        <div class="finding-stat"><div class="n">6</div><div class="lbl">IS only (genuine input)</div></div>
+        <div class="finding-stat"><div class="n">4</div><div class="lbl">EF only (entertainment)</div></div>
+        <div class="finding-stat"><div class="n">2</div><div class="lbl">Both IS + EF</div></div>
+        <div class="finding-stat"><div class="n">26</div><div class="lbl">Neither coded</div></div>
+      </div>
+      <div class="finding-note">Most social swiping (68%) doesn't explicitly frame the purpose as either entertainment or input-seeking — it's ambient social behavior. Among those who do frame it, genuine input-seeking is more common than pure entertainment (15.8% vs. 10.5%).</div>
+    </div>
+  </div>
+
+  <!-- Finding 5 -->
+  <div class="finding-card">
+    <div class="finding-header">
+      <span class="finding-num">F5</span>
+      <span class="finding-title">Community-building cluster — Q9 and Q11 don't overlap in this sample</span>
+    </div>
+    <div class="finding-body">
+      <div class="finding-q">How many respondents have SCC (shared context connection) in Q9 AND CB (community building) in Q11?</div>
+      <div class="finding-stats">
+        <div class="finding-stat"><div class="n">4</div><div class="lbl">SCC coded (Q9)</div></div>
+        <div class="finding-stat"><div class="n">3</div><div class="lbl">CB coded (Q11)</div></div>
+        <div class="finding-stat"><div class="n">0</div><div class="lbl">SCC ∩ CB overlap</div></div>
+      </div>
+      <div class="finding-note">No respondents in this pilot sample received both SCC and CB. The community-building behavior appears across different questions but in different individuals — suggesting two distinct user types: those who use alt platforms for community, and those who use dating apps themselves for community.</div>
+    </div>
+  </div>
+
+  <!-- Finding 6 -->
+  <div class="finding-card">
+    <div class="finding-header">
+      <span class="finding-num">F6</span>
+      <span class="finding-title">Non-romantic use breadth — 39% of users, 6 distinct purposes</span>
+    </div>
+    <div class="finding-body">
+      <div class="finding-q">How many respondents endorsed each non-romantic use category?</div>
+      <div class="finding-stats">
+        <div class="finding-stat"><div class="n">18</div><div class="lbl">Any non-romantic use</div></div>
+        <div class="finding-stat"><div class="n">39.1%</div><div class="lbl">of full sample</div></div>
+        <div class="finding-stat"><div class="n">6</div><div class="lbl">Distinct purpose types</div></div>
+        <div class="finding-stat"><div class="n">10</div><div class="lbl">Friend-finding (top purpose)</div></div>
+      </div>
+      <table class="xtab" style="margin-bottom:8px">
+        <thead><tr><th>Purpose</th><th>Freq</th><th>% of Q10=Yes (n=18)</th><th>% of total (N=46)</th></tr></thead>
+        <tbody>
+          <tr><td>FF — Friend-finding</td><td>10</td><td>55.6</td><td>21.7</td></tr>
+          <tr><td>SH — Sex/hookups &amp; sugar</td><td>5</td><td>27.8</td><td>10.9</td></tr>
+          <tr><td>CB — Community building</td><td>3</td><td>16.7</td><td>6.5</td></tr>
+          <tr><td>VD — Validation/distraction</td><td>2</td><td>11.1</td><td>4.3</td></tr>
+          <tr><td>NP — Networking</td><td>1</td><td>5.6</td><td>2.2</td></tr>
+          <tr><td>ST — Situationship</td><td>1</td><td>5.6</td><td>2.2</td></tr>
+        </tbody>
+        <tfoot><tr><td>Any non-romantic use</td><td>18</td><td>100.0</td><td>39.1</td></tr></tfoot>
+      </table>
+      <div class="finding-note positive">Friend-finding is the dominant non-romantic use case at 55.6% of Q10=Yes respondents — more than double the next category (sexual/hookup at 27.8%). Dating apps are functioning as a general social infrastructure for a significant minority of users.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<script>
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
